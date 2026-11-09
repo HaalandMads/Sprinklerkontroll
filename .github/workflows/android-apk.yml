@@ -28,7 +28,7 @@ jobs:
           java-version: 17
 
       - name: Installer avhengigheter
-        run: npm ci
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Typesjekk
         run: npx tsc --noEmit
