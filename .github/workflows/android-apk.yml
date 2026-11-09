@@ -1,0 +1,56 @@
+name: Bygg Android-APK
+
+# Kjøres manuelt fra Actions-fanen, eller automatisk når du lager en versjonstag (for eksempel v0.1.0).
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Installer avhengigheter
+        run: npm ci
+
+      - name: Typesjekk
+        run: npx tsc --noEmit
+
+      - name: Generer Android-prosjekt
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Bygg APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Gi APK-en et lesbart navn
+        run: cp android/app/build/outputs/apk/release/app-release.apk Sprinklerkontroll.apk
+
+      - name: Last opp APK som artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sprinklerkontroll-apk
+          path: Sprinklerkontroll.apk
+
+      - name: Legg APK-en ved en release (bare ved versjonstag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Sprinklerkontroll.apk
