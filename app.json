@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Sprinklerkontroll",
+    "slug": "sprinklerkontroll",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "no.madsfjarem.sprinklerkontroll"
+    },
+    "android": {
+      "package": "no.madsfjarem.sprinklerkontroll",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#1D5C8C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Sprinklerkontroll bruker kameraet til å ta bilder av avvik.",
+          "photosPermission": "Sprinklerkontroll trenger tilgang til bildene dine for å legge bilder til avvik."
+        }
+      ]
+    ],
+    "scheme": "sprinklerkontroll",
+    "description": "Kontroll av sprinkleranlegg etter FG-920. Laget av Mads Fjærem.",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#16202A"
+    },
+    "extra": {
+      "author": "Mads Fjærem"
+    }
+  }
+}
