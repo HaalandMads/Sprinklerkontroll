@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { Alert, Text, TextInput, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { BuildingListItem, listBuildings } from '../lib/db';
+import { exportAndShare } from '../lib/transfer';
 import { fmtDate } from '../lib/format';
 import { colors, severities, space } from '../lib/theme';
 import { Button, Empty, Row, Screen, s } from '../components/ui';
@@ -9,6 +10,11 @@ import { Button, Empty, Row, Screen, s } from '../components/ui';
 export default function Buildings() {
   const [items, setItems] = useState<BuildingListItem[]>([]);
   const [q, setQ] = useState('');
+  const [busy, setBusy] = useState(false);
+  const backup = async () => {
+    setBusy(true);
+    try { await exportAndShare('database'); } catch (e) { Alert.alert('Eksporten feilet', String(e)); } finally { setBusy(false); }
+  };
   const load = useCallback(() => { listBuildings(q).then(setItems); }, [q]);
   useFocusEffect(load);
 
@@ -16,6 +22,10 @@ export default function Buildings() {
     <Screen>
       <Stack.Screen options={{ title: 'Sprinklerkontroll', headerRight: () => <Button label="Om" kind="quiet" small onPress={() => router.push('/about')} style={{ minHeight: 36 }} /> }} />
       <Button label="Nytt bygg" onPress={() => router.push('/building/new')} />
+      <View style={{ flexDirection: 'row', gap: space.s, marginTop: space.s }}>
+        <Button label="Importer" kind="secondary" small onPress={() => router.push('/import')} style={{ flex: 1 }} />
+        <Button label="Sikkerhetskopi av alt" kind="secondary" small busy={busy} onPress={backup} style={{ flex: 1 }} />
+      </View>
       <TextInput value={q} onChangeText={setQ} placeholder="Søk etter bygg, adresse eller sted" placeholderTextColor="#8A949E" style={[s.input, { marginVertical: space.l }]} />
       {items.length === 0 ? (
         <Empty text={q ? 'Ingen bygg passer søket.' : 'Ingen bygg ennå. Legg inn det første bygget for å starte en kontroll.'} />
