@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, StyleSheet, Text, View } from 'react-native';
 import { fmtDate, parseDate, todayIso } from '../lib/format';
 import { colors, space } from '../lib/theme';
 import { Button, Field } from './ui';
@@ -14,7 +14,7 @@ export function CloseDialog({ visible, title, onCancel, onConfirm }: {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}
       onShow={() => { setComment(''); setDate(fmtDate(todayIso())); setErr(''); }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={st.back}>
+      <KeyboardAvoidingView behavior="padding" style={st.back}>
         <View style={st.box}>
           <Text style={st.title}>Lukk avvik</Text>
           <Text style={st.sub}>{title}</Text>
