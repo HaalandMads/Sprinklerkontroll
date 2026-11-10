@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   closeDeviation, DeviationListItem, deviationCountsByPoint, getInspection, Inspection, listCarriedDeviations,
@@ -9,6 +9,7 @@ import { fmtDate } from '../../../lib/format';
 import { groupByPosition, pointByCode, pointsFor, systemLabel, typeLabel } from '../../../lib/fg';
 import { colors, severityOf, space } from '../../../lib/theme';
 import { CloseDialog } from '../../../components/CloseDialog';
+import { exportAndShare } from '../../../lib/transfer';
 import { Button, Empty, Muted, Row, Screen, Section, SeverityTag } from '../../../components/ui';
 
 const statusInfo = (st: string | undefined, n: number) => {
@@ -26,6 +27,7 @@ export default function InspectionScreen() {
   const [devs, setDevs] = useState<DeviationListItem[]>([]);
   const [carried, setCarried] = useState<DeviationListItem[]>([]);
   const [closing, setClosing] = useState<DeviationListItem | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(() => {
     (async () => {
@@ -97,6 +99,11 @@ export default function InspectionScreen() {
             right={<SeverityTag severity={d.severity} closed={d.status === 'lukket'} />} onPress={() => router.push(`/deviation/${d.id}`)} />
         ))}
       </Section>
+
+      <Button label="Eksporter kontrollen" kind="secondary" busy={exporting} style={{ marginTop: space.xl }} onPress={async () => {
+        setExporting(true);
+        try { await exportAndShare('inspection', id); } catch (e) { Alert.alert('Eksporten feilet', String(e)); } finally { setExporting(false); }
+      }} />
 
       <CloseDialog visible={!!closing} title={closing ? `A-${closing.nr} ${closing.title}` : ''} onCancel={() => setClosing(null)}
         onConfirm={async (comment, date) => {
