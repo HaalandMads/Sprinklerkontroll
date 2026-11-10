@@ -10,6 +10,7 @@ import { groupByPosition, pointByCode, pointsFor, systemLabel, typeLabel } from 
 import { colors, severityOf, space } from '../../../lib/theme';
 import { CloseDialog } from '../../../components/CloseDialog';
 import { exportAndShare } from '../../../lib/transfer';
+import { printInspectionReport, shareInspectionPdf } from '../../../lib/report';
 import { Button, Empty, Muted, Row, Screen, Section, SeverityTag } from '../../../components/ui';
 
 const statusInfo = (st: string | undefined, n: number) => {
@@ -28,6 +29,13 @@ export default function InspectionScreen() {
   const [carried, setCarried] = useState<DeviationListItem[]>([]);
   const [closing, setClosing] = useState<DeviationListItem | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [reporting, setReporting] = useState('');
+  const report = async (kind: 'pdf' | 'print') => {
+    setReporting(kind);
+    try { await (kind === 'pdf' ? shareInspectionPdf(id) : printInspectionReport(id)); }
+    catch (e) { Alert.alert('Rapporten feilet', String(e)); }
+    finally { setReporting(''); }
+  };
 
   const load = useCallback(() => {
     (async () => {
@@ -98,6 +106,14 @@ export default function InspectionScreen() {
           <Row key={d.id} title={`A-${d.nr}  ${d.title}`} sub={pointByCode(d.point_code) ? `${d.point_code} ${pointByCode(d.point_code)!.title}` : 'Annet avvik'}
             right={<SeverityTag severity={d.severity} closed={d.status === 'lukket'} />} onPress={() => router.push(`/deviation/${d.id}`)} />
         ))}
+      </Section>
+
+      <Section title="Rapport for denne kontrollen">
+        <View style={{ flexDirection: 'row', gap: space.s }}>
+          <Button label="Del PDF" busy={reporting === 'pdf'} onPress={() => report('pdf')} style={{ flex: 1 }} />
+          <Button label="Skriv ut" kind="secondary" busy={reporting === 'print'} onPress={() => report('print')} style={{ flex: 1 }} />
+        </View>
+        <Muted>Rapporten viser sjekklisten, avvik registrert og lukket i kontrollen og tidligere avvik som fortsatt er åpne. Den inneholder kontaktopplysninger.</Muted>
       </Section>
 
       <Button label="Eksporter kontrollen" kind="secondary" busy={exporting} style={{ marginTop: space.xl }} onPress={async () => {
