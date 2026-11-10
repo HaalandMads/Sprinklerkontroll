@@ -20,7 +20,12 @@ export default function Buildings() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Sprinklerkontroll', headerRight: () => <Button label="Om" kind="quiet" small onPress={() => router.push('/about')} style={{ minHeight: 36 }} /> }} />
+      <Stack.Screen options={{ title: 'Sprinklerkontroll', headerRight: () => (
+        <View style={{ flexDirection: 'row' }}>
+          <Button label="Firma" kind="quiet" small onPress={() => router.push('/settings')} style={{ minHeight: 36 }} />
+          <Button label="Om" kind="quiet" small onPress={() => router.push('/about')} style={{ minHeight: 36 }} />
+        </View>
+      ) }} />
       <Button label="Nytt bygg" onPress={() => router.push('/building/new')} />
       <View style={{ flexDirection: 'row', gap: space.s, marginTop: space.s }}>
         <Button label="Importer" kind="secondary" small onPress={() => router.push('/import')} style={{ flex: 1 }} />
