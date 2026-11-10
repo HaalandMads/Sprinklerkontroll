@@ -17,6 +17,8 @@ Laget av **Mads Fjærem**. Testversjon for intern bruk.
 - **Faner på bygget:** Oversikt, Avvik, Kapasitet og Dokumenter, slik at mange avvik ikke fyller forsiden.
 - **Kapasitetsmåling:** legg inn målt vannmengde og trykk (også statisk trykk) og minstekravet fra dokumentasjonen. Appen tilpasser en forsyningskurve p = p0 − k·Q^1,85 og viser om kravet er innenfor, med margin og graf. Krav utenfor målt område merkes som ekstrapolert.
 - **Bla mellom kontrollpunkter:** forrige og neste punkt direkte fra punktet du står i.
+- **Rapport for én kontroll:** del som PDF eller skriv ut fra kontrollen. Viser sjekklisten med status, avvik registrert og lukket i kontrollen og tidligere avvik som fortsatt er åpne.
+- **Firma og logo:** «Firma» på forsiden. Firmanavn og logo vises øverst i rapportene.
 - **Avviksoversikt per bygg:** del som PDF (med bilder og kapasitetsmålinger med graf), skriv ut, eller del som CSV for Excel. Du velger om lukkede avvik skal tas med.
 
 Alle data lagres på telefonen. Bruk eksport og import til sikkerhetskopi og flytting mellom telefoner (se under).
@@ -96,6 +98,7 @@ Apple tillater ikke installasjon av apper direkte fra GitHub. Alternativene er:
 
 ## Versjoner
 
+- 0.4.0: rapport for én kontroll, firmanavn og logo i rapportene.
 - 0.3.0: eksport og import av hele databasen, ett bygg eller én kontroll.
 - 0.2.0: faner på bygget, kapasitetsmåling med graf, bla mellom kontrollpunkter, tastaturet dekker ikke lenger feltet du skriver i.
 - 0.1.0: første testversjon.

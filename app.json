@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sprinklerkontroll",
     "slug": "sprinklerkontroll",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "no.madsfjarem.sprinklerkontroll",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#1D5C8C",
         "foregroundImage": "./assets/android-icon-foreground.png",
