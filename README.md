@@ -14,9 +14,28 @@ Laget av **Mads Fjærem**. Testversjon for intern bruk.
 - **Kontrollpunkter:** hvert punkt har status (ikke vurdert, OK, avvik, ikke aktuelt), notat og en forklaring etter FG-920 veiledningsskjema A-2. Forklaringen viser hva som skal kontrolleres, særskilte punkter for bolig, typiske avvik med FGs anbefalte kategori, maksimalt trekk og kommentarer.
 - **Avvik:** overskrift, plassering, kommentar, alvorlighetsgrad (stor, middels, liten, merknad) og 1–10 bilder fra kamera eller galleri. Et typisk avvik fra FG-920 kan velges som mal. Andre avvik kan alltid legges til, på et hvilket som helst kontrollpunkt eller som «annet avvik».
 - **Senere besøk:** tidligere kontroller og dokumenter ligger på bygget. Åpne avvik fra tidligere kontroller vises i den nye kontrollen og kan lukkes med dato og kommentar når de er utbedret.
-- **Avviksoversikt per bygg:** del som PDF (med bilder), skriv ut, eller del som CSV for Excel. Du velger om lukkede avvik skal tas med.
+- **Faner på bygget:** Oversikt, Avvik, Kapasitet og Dokumenter, slik at mange avvik ikke fyller forsiden.
+- **Kapasitetsmåling:** legg inn målt vannmengde og trykk (også statisk trykk) og minstekravet fra dokumentasjonen. Appen tilpasser en forsyningskurve p = p0 − k·Q^1,85 og viser om kravet er innenfor, med margin og graf. Krav utenfor målt område merkes som ekstrapolert.
+- **Bla mellom kontrollpunkter:** forrige og neste punkt direkte fra punktet du står i.
+- **Avviksoversikt per bygg:** del som PDF (med bilder og kapasitetsmålinger med graf), skriv ut, eller del som CSV for Excel. Du velger om lukkede avvik skal tas med.
 
-Alle data lagres bare på telefonen og sikkerhetskopieres ikke automatisk.
+Alle data lagres på telefonen. Bruk eksport og import til sikkerhetskopi og flytting mellom telefoner (se under).
+
+## Sikkerhetskopi og flytting mellom telefoner
+
+Appen kan eksportere på tre nivåer. Alle lager én zip-fil som deles via telefonens delemeny (OneDrive, e-post, Teams osv.):
+
+- **Hele databasen:** «Sikkerhetskopi av alt» på forsiden.
+- **Ett bygg med all historikk:** «Eksporter bygget» under Oversikt på bygget. Kontroller, avvik med bilder, kapasitetsmålinger og dokumenter er med.
+- **Én kontroll:** «Eksporter kontrollen» nederst i kontrollen. Bygget og avvik som ble lukket i kontrollen er med, slik at filen kan importeres også der bygget ikke finnes.
+
+Importer med «Importer» på forsiden. Appen viser innholdet før import, og du velger om filen eller telefonen skal vinne hvis noe finnes begge steder. Ingenting slettes. Får et nytt avvik et nummer som allerede er i bruk på bygget, får det neste ledige nummer.
+
+Filene inneholder kontaktopplysninger og bilder. Lagre og del dem bare i godkjente systemer.
+
+## Oppdatering av appen
+
+APK-en fra GitHub signeres med den samme faste testnøkkelen fra Expo-malen hver gang. En ny versjon kan derfor installeres rett over den gamle, og dataene beholdes. Ta likevel en sikkerhetskopi før oppdatering. En egen signeringsnøkkel trengs først hvis appen skal distribueres via Google Play.
 
 ## Personopplysninger og FG-innhold
 
@@ -74,6 +93,12 @@ Apple tillater ikke installasjon av apper direkte fra GitHub. Alternativene er:
 - SQLite (`expo-sqlite`) for data. Bilder og dokumenter ligger i appens egen mappe, og bare filnavnet lagres i databasen.
 - Bilder lagres i to størrelser: 1600 px for visning og 600 px for PDF.
 - `npm run typecheck` kjører typesjekk.
+
+## Versjoner
+
+- 0.3.0: eksport og import av hele databasen, ett bygg eller én kontroll.
+- 0.2.0: faner på bygget, kapasitetsmåling med graf, bla mellom kontrollpunkter, tastaturet dekker ikke lenger feltet du skriver i.
+- 0.1.0: første testversjon.
 
 ## Videre ideer
 
