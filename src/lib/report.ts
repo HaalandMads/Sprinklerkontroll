@@ -2,9 +2,10 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
 import {
-  Building, DeviationListItem, InspectionListItem, getBuilding, listDeviationsForBuilding,
+  Building, CapacityTest, DeviationListItem, InspectionListItem, getBuilding, listCapacityTests, listDeviationsForBuilding,
   listInspections, listPhotosForBuilding,
 } from './db';
+import { chartSvgString, evaluate } from './capacity';
 import { fmtDate, safeFileName, todayIso } from './format';
 import { photoBase64, writeTempText } from './files';
 import { severityOf } from './theme';
@@ -13,7 +14,7 @@ import { pointByCode, systemLabel, typeLabel } from './fg';
 export const APP_NAME = 'Sprinklerkontroll';
 export const APP_AUTHOR = 'Mads Fjærem';
 
-type Data = { b: Building; devs: DeviationListItem[]; insps: InspectionListItem[]; photos: Map<string, string[]> };
+type Data = { b: Building; devs: DeviationListItem[]; insps: InspectionListItem[]; photos: Map<string, string[]>; caps: CapacityTest[] };
 
 async function load(buildingId: string, includeClosed: boolean): Promise<Data> {
   const b = await getBuilding(buildingId);
@@ -27,7 +28,8 @@ async function load(buildingId: string, includeClosed: boolean): Promise<Data> {
     arr.push(p.thumb);
     photos.set(p.deviation_id, arr);
   }
-  return { b, devs, insps, photos };
+  const caps = await listCapacityTests(buildingId);
+  return { b, devs, insps, photos, caps };
 }
 
 const esc = (s: string) =>
@@ -38,7 +40,7 @@ function address(b: Building) {
 }
 
 async function buildHtml(d: Data, includeClosed: boolean): Promise<string> {
-  const { b, devs, insps, photos } = d;
+  const { b, devs, insps, photos, caps } = d;
   const open = devs.filter((x) => x.status === 'apen');
   const count = (k: string) => open.filter((x) => x.severity === k).length;
   const inspDate = new Map(insps.map((i) => [i.id, i.date]));
@@ -113,8 +115,30 @@ async function buildHtml(d: Data, includeClosed: boolean): Promise<string> {
   ${insps.length ? `<table class="list"><tr><th>Dato</th><th>Type</th><th>Anlegg</th><th>Kontrollør</th><th>Nye avvik</th><th>Lukket</th></tr>${inspRows}</table>` : '<p>Ingen kontroller registrert.</p>'}
   <h2>Avvik</h2>
   ${devHtml || '<p>Ingen avvik.</p>'}
+  ${capHtml(caps)}
   <p class="foot">Laget med ${APP_NAME} av ${APP_AUTHOR}. Kontrollpunkter og kategorier etter FG-920:5. Rapporten inneholder kontaktopplysninger og skal ikke deles utenfor godkjente systemer.</p>
   </body></html>`;
+}
+
+function capHtml(caps: CapacityTest[]): string {
+  if (!caps.length) return '';
+  const n = (x: number, dd = 2) => x.toFixed(dd).replace('.', ',');
+  let out = '<h2>Kapasitetsmålinger</h2>';
+  for (const t of caps) {
+    const ev = evaluate(t.points, t.reqs);
+    const status = ev.status === 'innenfor' ? '<b style="color:#2E7D32">Innenfor kravet</b>' : ev.status === 'utenfor' ? '<b style="color:#C62828">Utenfor kravet</b>' : '<b>Ikke nok data</b>';
+    const pts = t.points.map((p) => `<tr><td>${n(p.q, 0)}</td><td>${n(p.p)}</td></tr>`).join('');
+    const reqs = ev.results.map((r) => `<tr><td>${esc(r.label || 'Krav')}</td><td>${n(r.q, 0)}</td><td>${n(r.p)}</td><td>${n(r.available)}</td><td>${r.margin >= 0 ? '+' : ''}${n(r.margin)}${r.extrapolated ? ' (ekstrapolert)' : ''}</td></tr>`).join('');
+    out += `<div class="dev" style="border-left-color:#1D5C8C">
+      <div class="devhead"><span class="title">${fmtDate(t.date)}${t.location ? ' – ' + esc(t.location) : ''}</span><span>${status}</span></div>
+      <table class="list"><tr><th>Vannmengde (l/min)</th><th>Trykk (bar)</th></tr>${pts}</table>
+      ${reqs ? `<table class="list" style="margin-top:6px"><tr><th>Krav</th><th>l/min</th><th>Krav bar</th><th>Tilgjengelig bar</th><th>Margin bar</th></tr>${reqs}</table>` : ''}
+      <p class="comment">${esc(ev.message)}</p>
+      <div style="margin-top:6px">${chartSvgString(t.points, t.reqs)}</div>
+      ${t.notes ? `<p class="comment">${esc(t.notes)}</p>` : ''}
+    </div>`;
+  }
+  return out;
 }
 
 function baseName(b: Building) {

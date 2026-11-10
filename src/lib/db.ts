@@ -63,6 +63,10 @@ export function getDb(): Promise<SQLite.SQLiteDatabase> {
           inspection_id TEXT NOT NULL REFERENCES inspections(id) ON DELETE CASCADE, code TEXT NOT NULL,
           status TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '', PRIMARY KEY (inspection_id, code));
         CREATE INDEX IF NOT EXISTS ix_dev_building ON deviations(building_id);
+        CREATE TABLE IF NOT EXISTS capacity_tests (
+          id TEXT PRIMARY KEY NOT NULL, building_id TEXT NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,
+          date TEXT NOT NULL, location TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '',
+          req_json TEXT NOT NULL DEFAULT '[]', points_json TEXT NOT NULL DEFAULT '[]', created_at TEXT NOT NULL);
         CREATE INDEX IF NOT EXISTS ix_insp_building ON inspections(building_id);
       `);
       return db;
@@ -275,4 +279,50 @@ export async function deviationCountsByPoint(inspectionId: string): Promise<Map<
 export async function listDeviationsForPoint(inspectionId: string, code: string) {
   const db = await getDb();
   return db.getAllAsync<DeviationListItem>(`${devSelect} WHERE d.inspection_id=? AND d.point_code=? ORDER BY d.nr`, [inspectionId, code]);
+}
+
+// ---------- Kapasitetsmåling ----------
+export type ReqPoint = { label: string; q: number; p: number };
+export type MeasPoint = { q: number; p: number };
+export type CapacityTest = {
+  id: string; building_id: string; date: string; location: string; notes: string;
+  reqs: ReqPoint[]; points: MeasPoint[]; created_at: string;
+};
+type CapacityRow = Omit<CapacityTest, 'reqs' | 'points'> & { req_json: string; points_json: string };
+const toTest = (r: CapacityRow): CapacityTest => {
+  const { req_json, points_json, ...rest } = r;
+  let reqs: ReqPoint[] = [];
+  let points: MeasPoint[] = [];
+  try { reqs = JSON.parse(req_json); } catch {}
+  try { points = JSON.parse(points_json); } catch {}
+  return { ...rest, reqs, points };
+};
+export async function listCapacityTests(buildingId: string): Promise<CapacityTest[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<CapacityRow>('SELECT * FROM capacity_tests WHERE building_id=? ORDER BY date DESC, created_at DESC', [buildingId]);
+  return rows.map(toTest);
+}
+export async function getCapacityTest(id: string): Promise<CapacityTest | null> {
+  const db = await getDb();
+  const r = await db.getFirstAsync<CapacityRow>('SELECT * FROM capacity_tests WHERE id=?', [id]);
+  return r ? toTest(r) : null;
+}
+export type CapacityInput = Omit<CapacityTest, 'id' | 'created_at'>;
+export async function saveCapacityTest(input: CapacityInput, id?: string): Promise<string> {
+  const db = await getDb();
+  const rj = JSON.stringify(input.reqs);
+  const pj = JSON.stringify(input.points);
+  if (id) {
+    await db.runAsync('UPDATE capacity_tests SET date=?, location=?, notes=?, req_json=?, points_json=? WHERE id=?',
+      [input.date, input.location, input.notes, rj, pj, id]);
+    return id;
+  }
+  const newId = uid();
+  await db.runAsync('INSERT INTO capacity_tests (id,building_id,date,location,notes,req_json,points_json,created_at) VALUES (?,?,?,?,?,?,?,?)',
+    [newId, input.building_id, input.date, input.location, input.notes, rj, pj, now()]);
+  return newId;
+}
+export async function deleteCapacityTest(id: string) {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM capacity_tests WHERE id=?', [id]);
 }
