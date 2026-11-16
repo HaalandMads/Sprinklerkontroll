@@ -24,6 +24,17 @@ export function setupWeb() {
 
   const base = ((Constants.expoConfig?.experiments as { baseUrl?: string } | undefined)?.baseUrl ?? '').replace(/\/$/, '');
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    navigator.serviceWorker.register(`${base}/sw.js`, { scope: `${base}/` }).catch(() => undefined);
+    // Når en ny versjon tar over, lastes appen på nytt slik at endringene vises med en gang.
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController && !reloaded) {
+        reloaded = true;
+        location.reload();
+      }
+    });
+    navigator.serviceWorker.register(`${base}/sw.js`, { scope: `${base}/`, updateViaCache: 'none' })
+      .then((reg) => reg.update())
+      .catch(() => undefined);
   }
 }
