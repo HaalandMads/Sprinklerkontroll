@@ -1,3 +1,7 @@
+# Sprinklerkontroll
+
+Les `OVERLEVERING.md` før du gjør endringer. Den beskriver arkitekturen (app og web fra samme kode), datamodellen, bygg og publisering og kjente fallgruver.
+
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
 ## Expo has changed — do not trust your training data
