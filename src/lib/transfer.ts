@@ -1,16 +1,14 @@
 import { strFromU8, strToU8, unzipSync, zipSync, Zippable } from 'fflate';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import Constants from 'expo-constants';
-import type { SQLiteBindValue } from 'expo-sqlite';
 import { getDb } from './db';
-import { docFile, photoFile } from './files';
+import type { BindValue } from './sqlite';
+import { fileExists, readBytes, readUri, shareData, writeBytes } from './platform';
 import { fmtDate, safeFileName, todayIso } from './format';
 
 // Eksportformat: en zip med manifest.json, data.json og filer under files/bilder og files/dokumenter.
 export const FORMAT = 1;
 export type Scope = 'database' | 'building' | 'inspection';
-type Row = Record<string, SQLiteBindValue>;
+type Row = Record<string, BindValue>;
 
 // Rekkefølgen sikrer at foreldre settes inn før barn.
 const TABLES = ['buildings', 'documents', 'inspections', 'inspection_points', 'deviations', 'photos', 'capacity_tests'] as const;
@@ -31,7 +29,7 @@ const emptyData = (): Data => ({ buildings: [], documents: [], inspections: [], 
 
 async function collect(scope: Scope, id?: string): Promise<{ data: Data; label: string }> {
   const db = await getDb();
-  const all = (sql: string, params: SQLiteBindValue[] = []) => db.getAllAsync<Row>(sql, params);
+  const all = (sql: string, params: BindValue[] = []) => db.getAllAsync<Row>(sql, params);
   const data = emptyData();
   if (scope === 'database') {
     for (const t of TABLES) data[t] = await all(`SELECT * FROM ${t}`);
@@ -70,14 +68,14 @@ export async function exportAndShare(scope: Scope, id?: string): Promise<void> {
   let files = 0;
   for (const p of data.photos) {
     for (const name of [String(p.file), String(p.thumb)]) {
-      const f = photoFile(name);
-      if (f.exists) { zip[`files/bilder/${name}`] = [await f.bytes(), { level: 0 }]; files++; }
+      const b = await readBytes('bilder', name);
+      if (b) { zip[`files/bilder/${name}`] = [b, { level: 0 }]; files++; }
     }
   }
   for (const d of data.documents) {
     const name = String(d.file);
-    const f = docFile(name);
-    if (f.exists) { zip[`files/dokumenter/${name}`] = [await f.bytes(), { level: 1 }]; files++; }
+    const b = await readBytes('dokumenter', name);
+    if (b) { zip[`files/dokumenter/${name}`] = [b, { level: 1 }]; files++; }
   }
   const counts = Object.fromEntries(TABLES.map((t) => [t, data[t].length])) as Record<Table, number>;
   const manifest: Manifest = {
@@ -89,18 +87,14 @@ export async function exportAndShare(scope: Scope, id?: string): Promise<void> {
   const bytes = zipSync(zip);
   const kind = scope === 'database' ? 'alt' : scope === 'building' ? 'bygg' : 'kontroll';
   const name = `Sprinklerkontroll_${kind}_${scope === 'database' ? '' : safeFileName(label.replace(/^[^:]*:\s*/, '')) + '_'}${todayIso()}.zip`;
-  const out = new File(Paths.cache, name);
-  if (out.exists) out.delete();
-  out.create({ overwrite: true });
-  await out.write(bytes);
-  await Sharing.shareAsync(out.uri, { mimeType: 'application/zip', UTI: 'public.zip-archive', dialogTitle: 'Del eksportfil' });
+  await shareData(name, bytes, 'application/zip', 'public.zip-archive', 'Del eksportfil');
 }
 
 const safeName = (n: string) => n.length > 0 && !n.includes('/') && !n.includes('\\') && n !== '.' && n !== '..';
 
 /** Leser og kontrollerer en eksportfil. */
 export async function readPackage(uri: string): Promise<Package> {
-  const bytes = await new File(uri).bytes();
+  const bytes = await readUri(uri);
   let entries: Record<string, Uint8Array>;
   try { entries = unzipSync(bytes); } catch { throw new Error('Filen er ikke en gyldig eksportfil fra Sprinklerkontroll.'); }
   if (!entries['manifest.json'] || !entries['data.json']) throw new Error('Filen mangler innhold fra Sprinklerkontroll.');
@@ -127,11 +121,9 @@ export async function importPackage(pkg: Package, policy: Policy): Promise<Impor
   for (const [key, bytes] of Object.entries(pkg.files)) {
     const m = /^files\/(bilder|dokumenter)\/(.+)$/.exec(key);
     if (!m || !safeName(m[2])) continue;
-    const f = m[1] === 'bilder' ? photoFile(m[2]) : docFile(m[2]);
-    if (f.exists && policy === 'behold') continue;
-    if (f.exists) f.delete();
-    f.create({ overwrite: true });
-    await f.write(bytes);
+    const kind = m[1] === 'bilder' ? 'bilder' : 'dokumenter';
+    if (policy === 'behold' && (await fileExists(kind, m[2]))) continue;
+    await writeBytes(kind, m[2], bytes);
     res.files++;
   }
 

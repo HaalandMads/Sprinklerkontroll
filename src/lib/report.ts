@@ -1,6 +1,3 @@
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import { File, Paths } from 'expo-file-system';
 import {
   Building, CapacityTest, DeviationListItem, InspectionListItem, deviationCountsByPoint, getBuilding, getInspection,
   listCapacityTests, listCarriedDeviations, listDeviationsForBuilding, listDeviationsForInspection, listInspections,
@@ -8,7 +5,8 @@ import {
 } from './db';
 import { chartSvgString, evaluate } from './capacity';
 import { fmtDate, safeFileName, todayIso } from './format';
-import { photoBase64, writeTempText } from './files';
+import { photoBase64 } from './files';
+import { printHtml, shareData, sharePdfFromHtml } from './platform';
 import { severityOf } from './theme';
 import { groupByPosition, pointByCode, pointsFor, systemLabel, typeLabel } from './fg';
 import { getCompany, logoDataUrl } from './settings';
@@ -258,11 +256,7 @@ async function inspectionHtml(inspectionId: string): Promise<{ html: string; nam
 // ---------- Deling og utskrift ----------
 
 async function sharePdfHtml(html: string, name: string, title: string) {
-  const { uri } = await Print.printToFileAsync({ html });
-  const target = new File(Paths.cache, `${name}.pdf`);
-  if (target.exists) target.delete();
-  await new File(uri).copy(target, { overwrite: true });
-  await Sharing.shareAsync(target.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: title });
+  await sharePdfFromHtml(html, `${name}.pdf`, title);
 }
 
 const buildingName = (b: Building) => `Avvik_${safeFileName(b.title)}_${todayIso()}`;
@@ -274,7 +268,7 @@ export async function sharePdf(buildingId: string, includeClosed: boolean) {
 
 export async function printReport(buildingId: string, includeClosed: boolean) {
   const d = await loadBuilding(buildingId, includeClosed);
-  await Print.printAsync({ html: await buildingHtml(d, includeClosed) });
+  await printHtml(await buildingHtml(d, includeClosed));
 }
 
 export async function shareInspectionPdf(inspectionId: string) {
@@ -284,7 +278,7 @@ export async function shareInspectionPdf(inspectionId: string) {
 
 export async function printInspectionReport(inspectionId: string) {
   const { html } = await inspectionHtml(inspectionId);
-  await Print.printAsync({ html });
+  await printHtml(html);
 }
 
 const csvCell = (v: unknown) => {
@@ -303,6 +297,5 @@ export async function shareCsv(buildingId: string, includeClosed: boolean) {
   ]);
   // Semikolon og BOM gjør at norsk Excel åpner filen riktig.
   const csv = '\ufeff' + [head, ...rows].map((r) => r.map(csvCell).join(';')).join('\r\n');
-  const f = await writeTempText(`${buildingName(d.b)}.csv`, csv);
-  await Sharing.shareAsync(f.uri, { mimeType: 'text/csv', UTI: 'public.comma-separated-values-text', dialogTitle: 'Del avviksliste (CSV)' });
+  await shareData(`${buildingName(d.b)}.csv`, csv, 'text/csv', 'public.comma-separated-values-text', 'Del avviksliste (CSV)');
 }

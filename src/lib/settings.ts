@@ -1,7 +1,7 @@
-import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { getDb } from './db';
 import { uid } from './format';
+import { fileUri, importUri, readBase64, removeFile } from './platform';
 
 // Innstillinger for kontrollørens firma. Lagres bare på denne telefonen og følger ikke med i eksport.
 export type Company = { name: string; logo: string };
@@ -31,13 +31,7 @@ export async function getCompany(): Promise<Company> {
   return { name: await getSetting('company_name'), logo: await getSetting('company_logo') };
 }
 
-function dir(): Directory {
-  const d = new Directory(Paths.document, 'sprinklerkontroll', 'firma');
-  if (!d.exists) d.create({ intermediates: true, idempotent: true });
-  return d;
-}
-
-export const logoFile = (name: string) => new File(dir(), name);
+export const logoUri = (name: string) => fileUri('firma', name);
 
 /** Lagrer logoen som PNG (beholder gjennomsiktig bakgrunn), høyst 600 px bred. */
 export async function storeLogo(uri: string, width?: number): Promise<string> {
@@ -46,7 +40,7 @@ export async function storeLogo(uri: string, width?: number): Promise<string> {
   const ref = await ctx.renderAsync();
   const saved = await ref.saveAsync({ format: SaveFormat.PNG });
   const name = `logo_${uid()}.png`;
-  await new File(saved.uri).copy(logoFile(name), { overwrite: true });
+  await importUri('firma', name, saved.uri);
   await removeLogo();
   await setSetting('company_logo', name);
   return name;
@@ -54,23 +48,13 @@ export async function storeLogo(uri: string, width?: number): Promise<string> {
 
 export async function removeLogo() {
   const old = await getSetting('company_logo');
-  if (old) {
-    try {
-      const f = logoFile(old);
-      if (f.exists) f.delete();
-    } catch {}
-  }
+  if (old) await removeFile('firma', old);
   await setSetting('company_logo', '');
 }
 
 /** Logoen som data-URL til rapporter, eller tom tekst hvis det ikke finnes noen logo. */
 export async function logoDataUrl(name: string): Promise<string> {
   if (!name) return '';
-  try {
-    const f = logoFile(name);
-    if (!f.exists) return '';
-    return `data:image/png;base64,${await f.base64()}`;
-  } catch {
-    return '';
-  }
+  const b64 = await readBase64('firma', name);
+  return b64 ? `data:image/png;base64,${b64}` : '';
 }

@@ -1,4 +1,4 @@
-import * as SQLite from 'expo-sqlite';
+import { openDb, type Db } from './sqlite';
 import type { Severity } from './theme';
 import { uid } from './format';
 
@@ -29,12 +29,12 @@ export type Deviation = {
 export type DeviationListItem = Deviation & { inspection_date: string; photo_count: number; first_photo: string | null };
 export type Photo = { id: string; deviation_id: string; file: string; thumb: string; sort: number; created_at: string };
 
-let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+let dbPromise: Promise<Db> | null = null;
 
-export function getDb(): Promise<SQLite.SQLiteDatabase> {
+export function getDb(): Promise<Db> {
   if (!dbPromise) {
     dbPromise = (async () => {
-      const db = await SQLite.openDatabaseAsync('sprinklerkontroll.db');
+      const db = await openDb('sprinklerkontroll.db');
       await db.execAsync(`
         PRAGMA journal_mode = WAL;
         PRAGMA foreign_keys = ON;
