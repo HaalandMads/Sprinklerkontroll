@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Image, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack } from 'expo-router';
-import { getCompany, logoFile, removeLogo, setSetting, storeLogo } from '../lib/settings';
+import { getCompany, logoUri, removeLogo, setSetting, storeLogo } from '../lib/settings';
 import { colors, space } from '../lib/theme';
 import { Button, Field, Muted, Screen, Section } from '../components/ui';
 
@@ -48,7 +48,7 @@ export default function SettingsScreen() {
       <Section title="Logo">
         {logo ? (
           <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: space.m, alignItems: 'center', marginBottom: space.m }}>
-            <Image source={{ uri: logoFile(logo).uri }} style={{ width: '100%', height: 90 }} resizeMode="contain" accessibilityLabel="Firmalogo" />
+            <Image source={{ uri: logoUri(logo) }} style={{ width: '100%', height: 90 }} resizeMode="contain" accessibilityLabel="Firmalogo" />
           </View>
         ) : (
           <Text style={{ color: colors.muted, marginBottom: space.m }}>Ingen logo valgt.</Text>
