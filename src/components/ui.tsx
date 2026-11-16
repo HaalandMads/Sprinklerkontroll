@@ -3,16 +3,16 @@ import {
   ActivityIndicator, Pressable, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardScroll } from './KeyboardScroll';
 import { colors, severityOf, space, touch } from '../lib/theme';
 
 export function Screen({ children, scroll = true }: { children: React.ReactNode; scroll?: boolean }) {
   const insets = useSafeAreaInsets();
   if (!scroll) return <View style={[s.screen, { paddingBottom: insets.bottom }]}>{children}</View>;
   return (
-    <KeyboardAwareScrollView style={s.screen} bottomOffset={32} contentContainerStyle={{ padding: space.l, paddingBottom: space.xl + insets.bottom }} keyboardShouldPersistTaps="handled">
+    <KeyboardScroll style={s.screen} bottomOffset={32} contentContainerStyle={{ padding: space.l, paddingBottom: space.xl + insets.bottom }} keyboardShouldPersistTaps="handled">
       {children}
-    </KeyboardAwareScrollView>
+    </KeyboardScroll>
   );
 }
 
