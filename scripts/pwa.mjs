@@ -1,12 +1,23 @@
 // Gjør web-eksporten (dist/) til en installerbar PWA for GitHub Pages:
 // manifest, metadata for iPhone, tjenestearbeider for bruk uten nett og støtte for direkte lenker.
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, writeFileSync, copyFileSync, renameSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const app = JSON.parse(readFileSync('app.json', 'utf8')).expo;
 const BASE = (app.experiments?.baseUrl ?? '').replace(/\/$/, '');
 const DIST = 'dist';
+
+// Ikonene får innholdets sjekksum i filnavnet, slik at et nytt ikon alltid får en ny adresse
+// og ikke kan leveres fra gammel mellomlagring på telefonen.
+const versioned = {};
+for (const name of ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png']) {
+  const h = createHash('sha256').update(readFileSync(join(DIST, name))).digest('hex').slice(0, 10);
+  const vname = name.replace('.png', `.${h}.png`);
+  renameSync(join(DIST, name), join(DIST, vname));
+  versioned[name] = vname;
+}
+const favHash = createHash('sha256').update(readFileSync(join(DIST, 'favicon.ico'))).digest('hex').slice(0, 10);
 
 const manifest = {
   name: 'Sprinklerkontroll',
@@ -20,23 +31,25 @@ const manifest = {
   background_color: '#F2F4F6',
   theme_color: '#16202A',
   icons: [
-    { src: `${BASE}/icon-192.png`, sizes: '192x192', type: 'image/png', purpose: 'any' },
-    { src: `${BASE}/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any' },
-    { src: `${BASE}/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    { src: `${BASE}/${versioned['icon-192.png']}`, sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: `${BASE}/${versioned['icon-512.png']}`, sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: `${BASE}/${versioned['icon-512.png']}`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
   ],
 };
 writeFileSync(join(DIST, 'manifest.webmanifest'), JSON.stringify(manifest, null, 2));
 
 let html = readFileSync(join(DIST, 'index.html'), 'utf8');
 const head = [
-  `<link rel="manifest" href="${BASE}/manifest.webmanifest">`,
-  `<link rel="apple-touch-icon" href="${BASE}/apple-touch-icon.png">`,
+  `<link rel="manifest" href="${BASE}/manifest.webmanifest?v=${favHash}">`,
+  `<link rel="apple-touch-icon" href="${BASE}/${versioned['apple-touch-icon.png']}">`,
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="black">',
   '<meta name="apple-mobile-web-app-title" content="Sprinklerkontroll">',
 ].join('\n');
-html = html.replace(/<html lang="[^"]*"/, '<html lang="no"').replace('</head>', `${head}\n</head>`);
+html = html.replace(/<html lang="[^"]*"/, '<html lang="no"')
+  .replace(`${BASE}/favicon.ico"`, `${BASE}/favicon.ico?v=${favHash}"`)
+  .replace('</head>', `${head}\n</head>`);
 writeFileSync(join(DIST, 'index.html'), html);
 // GitHub Pages viser 404.html for adresser den ikke kjenner, slik at direkte lenker til skjermer virker.
 copyFileSync(join(DIST, 'index.html'), join(DIST, '404.html'));
@@ -88,7 +101,20 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request).catch(() => caches.match(BASE + '/index.html')));
     return;
   }
-  e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
+  // Programfiler har versjon i navnet og kan trygt hentes fra lageret.
+  if (url.pathname.startsWith(BASE + '/_expo/static/')) {
+    e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
+    return;
+  }
+  // Alt annet (manifest, ikoner, favicon) hentes fra nettet først, og fra lageret uten nett.
+  e.respondWith(
+    fetch(e.request)
+      .then((r) => {
+        if (r.ok) { const copy = r.clone(); caches.open(APP).then((c) => c.put(e.request, copy)); }
+        return r;
+      })
+      .catch(() => caches.match(e.request, { ignoreSearch: true })),
+  );
 });
 `;
 writeFileSync(join(DIST, 'sw.js'), sw);
