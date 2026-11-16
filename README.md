@@ -44,6 +44,23 @@ APK-en fra GitHub signeres med den samme faste testnøkkelen fra Expo-malen hver
 - Byggene inneholder kontaktopplysninger (navn, mobil, e-post), og bildene kan vise personer eller kundeforhold. PDF- og CSV-filer som deles fra appen inneholder de samme opplysningene. Del dem bare innenfor godkjente systemer.
 - `src/data/fg920.ts` inneholder kontrollpunkter og forklaringer fra FG-920:5. Innholdet tilhører FG. **Legg repoet ut som privat på GitHub.**
 
+## Web-app (PWA) for Android og iPhone
+
+Appen finnes også som web-app som installeres fra nettleseren, uten app-butikk og uten utviklerkonto:
+**https://haalandmads.github.io/Sprinklerkontroll/**
+
+- **iPhone og iPad:** åpne adressen i Safari, trykk Del-knappen og velg «Legg til på Hjem-skjerm».
+- **Android:** åpne adressen i Chrome, trykk menyen (tre prikker) og velg «Installer app» eller «Legg til på startskjermen».
+
+Web-appen har de samme funksjonene som APK-en. Den oppdateres av seg selv neste gang den åpnes med nett, og virker uten nett etter første åpning.
+
+Forskjeller fra APK-en:
+- **PDF:** «Del PDF» åpner utskriftsvinduet. På Android velger du «Lagre som PDF». På iPhone trykker du Del-knappen i utskriftsvinduet.
+- **Lagring:** dataene lagres i nettleserens lagring på enheten. Sletter du nettleserdata for adressen, forsvinner de. Ta jevnlig «Sikkerhetskopi av alt».
+- **Flytting fra APK:** eksporter med «Sikkerhetskopi av alt» i APK-en og importer filen i web-appen.
+
+Web-appen bygges og publiseres automatisk av `.github/workflows/pages.yml` hver gang koden endres. GitHub Pages må være slått på med kilden «GitHub Actions» (Settings → Pages).
+
 ## Kom i gang på PC
 
 Krever Node.js 22 eller nyere.
@@ -98,6 +115,7 @@ Apple tillater ikke installasjon av apper direkte fra GitHub. Alternativene er:
 
 ## Versjoner
 
+- 0.5.0: web-app (PWA) for Android og iPhone, publisert på GitHub Pages.
 - 0.4.0: rapport for én kontroll, firmanavn og logo i rapportene.
 - 0.3.0: eksport og import av hele databasen, ett bygg eller én kontroll.
 - 0.2.0: faner på bygget, kapasitetsmåling med graf, bla mellom kontrollpunkter, tastaturet dekker ikke lenger feltet du skriver i.

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sprinklerkontroll",
     "slug": "sprinklerkontroll",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "no.madsfjarem.sprinklerkontroll",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#1D5C8C",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -21,7 +21,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Sprinklerkontroll",
+      "shortName": "Sprinklerkontroll",
+      "lang": "no",
+      "themeColor": "#16202A",
+      "backgroundColor": "#F2F4F6"
     },
     "plugins": [
       "expo-router",
@@ -44,6 +50,9 @@
     },
     "extra": {
       "author": "Mads Fjærem"
+    },
+    "experiments": {
+      "baseUrl": "/Sprinklerkontroll"
     }
   }
 }
